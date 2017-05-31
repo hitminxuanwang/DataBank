@@ -1,0 +1,12 @@
+Created by Minxuan Wang
+2015210949-计算机-王敏轩 16-3-31
+说明
+imagewavlet - clock.m,imagewavelet.m是两个主程序
+wave2mat是功能函数，用于将向量按照规则组合成各个
+分辨率下的矩阵，imagewavelet.m和imagewavelet-clock.m
+程序基本完全相同只是imagewavelet.m可以处理3通道图像(TV_Building.bmp)
+imagewavelet-clock.m处理灰度图(Clock.bmp)
+基本原理
+对图像采用Db3小波进行3级分解，低频采用均值融合，高频采用自适应融合
+，实验结果分别为clock.jpg和Tv_bf.bmp,可以看出基本达到目标实验效果，
+但是仍旧有缺陷，图像整体平滑性不如原图好。

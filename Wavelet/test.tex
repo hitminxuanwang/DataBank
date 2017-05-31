@@ -1,0 +1,139 @@
+\documentclass[UTF8]{beamer}
+\usepackage{ctex}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usetheme{Warsaw}
+\begin{document}
+%%-------------------------------------------------
+    \title{From Sparse Solutions of
+Systems of Equations to Sparse
+Modeling of Images}
+    \author{Minxuan Wang}
+    \institute{}
+    \date{\today}
+    \frame{\titlepage}
+%%-------------------------------------------------
+\begin{frame}\frametitle{线性方程稀疏解}
+\vspace{-2cm}
+\begin{equation*}
+\min \limits_{x} J(x)\ s.t.\ b=Ax \ A \in {\mathbb{R}}^{n \times m} 
+%\max \limits_{a<x<b}\{f(x)\} 
+\end{equation*}
+\noindent\small\color{black}将J(x)理解为稀疏性(\emph{sparsity})，问题转化成线性方程的最稀疏解,
+\noindent\small\color{black}使用向量中非零值的个数来描述向量的稀疏性.
+\begin{equation*}
+\| x\|_{0}=\#\{i:x_{i}\neq 0\}
+\end{equation*}
+\noindent 将矩阵A的列看作字典原子，b是原信号向量，x表示A中原子的线性组合，要求这个线性组合为最稀疏的
+\end{frame}
+\begin{frame}\frametitle{优化中的问题}
+\noindent NP-Hard 非凸问题，难以有效求解，但是假如A中的列不相关，\emph{sparsity}(0范数问题)将会等价于1范数问题(凸函数)。
+\noindent 另外对于某些种类的问题GA算法能够得到最稀疏解。
+\begin{equation*}
+\| x\|_{p}=( \sum_{i}|x_{i}^{p}|)^{(1/p)}
+\end{equation*}
+\vspace{-1cm}
+\begin{figure}
+\begin{center}
+    \includegraphics[width=160pt]{1.jpg}
+\end{center}
+\end{figure}
+\end{frame}
+\begin{frame}\frametitle{最稀疏解的唯一性问题}
+\noindent 什么时候存在最稀疏解？\\
+\noindent \emph{spark}定义：\emph{The spark of a given matrix A is the smallest number
+of columns from A that are linearly dependent.}
+$$
+\begin{bmatrix}
+   1 & 0 & 0 & 0 & 1 \\
+   0 & 1 & 0 & 0 & 1 \\
+   0 & 0 & 1 & 0 & 0 \\
+   0 & 0 & 0 & 1 & 0
+  \end{bmatrix}
+$$
+\normalsize\emph{ Rank=4 \ Spark=3}
+\end{frame}
+\begin{frame}\frametitle{最稀疏解的唯一性问题}
+定理：
+\emph{If a system of linear equations Ax = b
+has a solution x obeying $\|x\|_{0}$ $<$spark(A)/2,, this solution is necessarily the sparsest
+possible.}\\
+证明：若Ax=0，那么$\|x\|_{0} \geqslant spark(A)$,因为Ax表示A中某几列的线性组合为0，说明A中这几列线性相关。故大于spark(A)
+考虑另外一个解y，有A(x-y)=0,那么\\ $\|x\|_{0}+\|y\|_{0} \geqslant \|x-y\|_{0} \geqslant spark(A) $ \\
+因为$\|x\|_{0}<spark(A)/2$那么另外一个必然大于spark(A)/2所以没有比这个解更稀疏的解。
+\end{frame}
+\begin{frame}\frametitle{最稀疏解的唯一性问题}
+通常直接计算spark的比较困难。所以可以通过Mutual Coherence来刻画最稀疏解的唯一性。\\
+定义:\emph{The mutual coherence of a given matrix A
+is the largest absolute normalized inner product between different columns from A.
+Denoting the kth column in A by ak, the mutual coherence is given by}\\
+\hspace{2cm}$\mu(A)=\max \limits_{1 \leqslant k,j \leqslant m,k \neq j} \frac{|a_{k}^{T}a_{j}|}{\|a_{k}\|_{2}\cdot \|a_{j}\|_{2}}$\\
+酉矩阵，$\mu(A)$=0 
+\end{frame}
+\begin{frame}\frametitle{最稀疏解的唯一性问题}
+引理：\emph{For any matrix $ A \in \mathbb{R}^{n \times m }$ , the following relationship holds:\\
+\hspace{3cm}$spark(A) \geqslant 1+\frac{1}{\mu(A)}$}\\
+证明：首先normalize A矩阵的列向量，得到$ \widetilde{A}$ \emph{spark $\mu$}都不变，Gram Matrix G=$ \widetilde{A}^{T}\widetilde{A} $满足：\\
+${\{G_{k,k}=1:1 \leqslant k \leqslant m\}}$  ${\{|G_{k,j}| \leqslant \mu: 1 \leqslant k,j \leqslant m, k \neq j\}}$\\
+从$ \widetilde{A}$中选取p列，并计算子Gram Matrix，如果此子矩阵是对角占优矩阵($\sum_{j \neq i} |G_{i,j}| < |G_{i,i}|$),
+那么此矩阵是正定的(非奇异的)，故A中这p列线性无关。所以，如果有$p<1+1/\mu$那么子矩阵就是正定的并且必然存在一个p满足介于$[1/\mu,1+1/\mu]$之间(p任意取，可以取到$1+1/\mu$的下取整，而$1+1/\mu$的下取整大于$1/\mu)$所以存在p使$p+1 \geqslant 1+1/\mu$,那么$spark(A) \geqslant1+1/\mu$
+\end{frame}
+\begin{frame}\frametitle{求解最稀疏解}
+\noindent可以使用BP算法，求解1范数来代替0范数(凸优化问题)。\\
+\noindent另外可以使用GA算法，例如MP，OMP。\\
+\noindent目标：解优化$P_{0}: min_{x} \|x\|_{0} \ s.t. Ax=b$
+\noindent参数：A,b,错误阈值$\epsilon_{0}$\\
+\noindent 初始化:$k=0,x^{0}=0,r^{0}=b-Ax^{0}=b ,S^{0}=\varnothing$\\
+\noindent 迭代：(1)计算误差$\epsilon(j)=min_{z_{j}}\|a_{j}z_{j}-r^{k-1} \|_{2}^{2}$最优解为$z_{j}^{*}=a_{j}^{T}r^{k-1}\| a_{j}\|_{2}^{2}$\\
+\noindent (2)找到最小的误差$\epsilon(j_{0})$并将$j_{0}$保存进S，$S^{k}=S^{k-1}\cup\{j_{0}\}$\\
+\noindent (3)计算$x^{k}$,根据$S^{k}$最小化$\|Ax-b\|_{2}^{2}$\\
+\noindent (4)更新残差 $r^{k}=b-Ax^{k}$\\
+\noindent (5)残差小于阈值$\epsilon_{0}$停止，最优解为$x^{k}$\\
+\noindent 可以证明如果满足$\|x\|_{0}<\frac{1}{2}(1+\frac{1}{\mu(A)})$则GA能收敛到最稀疏解
+\end{frame}
+\begin{frame}\frametitle{形态学成分分析 MCA}
+假设将一副图像，考虑为两种信号的叠加。通过不同的稀疏模型来分离两种信号。\\
+优化问题:$\min\limits_{x_{1},x_{2}}\|x_{1}\|_{0}+\|x_{2}\|_{0} \ s.t. \|y-A_{1}x_{1}-A_{2}x_{2}\|_{2}^{2} \leqslant \epsilon_{1}^{2}+\epsilon_{2}^{2}$
+\begin{figure}
+\begin{center}
+    \includegraphics[width=250pt]{2.jpg}
+\end{center}
+\end{figure}
+\end{frame}
+\begin{frame}\frametitle{字典学习K-SVD}
+\noindent之前的介绍中字典都是固定的，K-SVD算法通过样本学习来更新字典。\\
+\noindent 目标：找到最佳的字典来表示样本$\{y_{i}\}_{i=1}^{N}$,优化目标：\\
+$\min \limits_{D,X}\{\|Y-DX\|_{F}^{2}\}\ s.t. \ \forall i,\|x_{i}\|_{0}<T0$\\
+\noindent 设置$D^{0} \in \mathbb{R}^{n \times K}$,J=1\\
+\noindent 使用之前的算法对每一个$y_{i}$计算$x_{i}$,i=1,2,...,N\\
+$\min \limits_{x_{i}}{\{\|y_{i}-Dx_{i}\|_{2}^{2}\}}\ s.t.\ \|x_{i}\|_{0} \leqslant T0$\\
+对于\\$\|Y-DX\|_{F}^{2}=\|Y-\sum_{1}^{K}{d_{j}x_{T}^{j}}\|_{F}^{2}=\|(Y-\sum_{j \neq k}{d_{j}x_{T}^{j}})-d_{k}x_{T}^{k}\|_{F}^{2}
+=\|E_{k}-d_{k}x_{T}^{k}\|_{F}^{2}$
+
+
+\end{frame}
+
+\begin{frame}\frametitle{字典学习K-SVD}
+\noindent做一个变换:$\|E_{k}\Omega_{k}-d_{k}x_{T}^{k}\Omega_{k}\|_{F}^{2}=\|E_{R}-d_{k}x_{R}^{k}\|_{F}^{2}$\\
+\noindent使用奇异值分解SVD,得到$E_{k}^{R}=U\Delta V^{T}$ \\\noindent$d-\>U,x-\>V$
+\end{frame}
+\begin{frame}\frametitle{K-SVD应用}
+\noindent 很容易理解,使用K-SVD可以得到图像的稀疏表示，只需存储码表以及字典就可以保存图像的信息。实现了图像压缩。\\
+\noindent 另外K-SVD可以应用于图像降噪.原理是降维是一种有效的去除噪声的方法。可以假设无噪声图像可以很好得使用稀疏表示，当对一个噪声图像进行稀疏表示时，噪声部分随着降维
+被滤掉。\\
+\noindent 去噪问题要优化的问题是\\$\widetilde{\alpha}=argmin_{\alpha}\|\alpha_{0}\| \ s.t. \ \|D\alpha-y\|_{2}^{2} \leqslant T$\\
+\noindent改写成罚函数的形式：$\widetilde{\alpha}=argmin_{\alpha}\|D\alpha-y\|_{2}^{2} +\mu\|\alpha_{0}\|$
+\\当图像比较大的时候，K-SVD字典学习会很慢，有两种方法来处理，其中之一是将大图像分解成一块一块的小图像来处理如$\sqrt{n} \times \sqrt {n}$
+
+\end{frame}
+
+\begin{frame}\frametitle{K-SVD应用}
+\noindent罚函数变为：${\{\widetilde{\alpha_{ij}},\widetilde{X}\}}=argmin_{\{\alpha_{ij},X\}}\lambda\|X-Y\|_{2}^{2}+\sum_{ij}\mu_{ij}\|\alpha_{ij}\|_{0}+\sum_{ij}\|D\alpha_{ij}-R_{ij}X\|_{2}^{2}$
+将D看作已知，然后Y=X,可以得到所有的优化解$\widetilde{\alpha}$类似之前的K-SVD操作更新D,并解出X,优化目标\\
+\noindent $\widetilde{X}=argmin_{x}\lambda\|X-Y\|_{2}^{2}+\sum_{ij}\|D\alpha_{ij}-R_{ij}\|_2X^{2}$
+\end{frame}
+
+
+
+\end{document}               
