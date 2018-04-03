@@ -1,0 +1,111 @@
+\thusetup{
+  %******************************
+  % 注意：
+  %   1. 配置里面不要出现空行
+  %   2. 不需要的配置信息可以删除
+  %******************************
+  %
+  %=====
+  % 秘级
+  %=====
+  secretlevel={秘密},
+  secretyear={10},
+  %
+  %=========
+  % 中文信息
+  %=========
+  ctitle={全景图像与视频的拼接与融合},
+  cdegree={工程硕士},
+  cdepartment={计算机科学与技术系},
+  cmajor={计算机技术},
+  cauthor={王敏轩},
+  csupervisor={张松海副教授},
+  %cassosupervisor={陈文光教授}, % 副指导老师
+  %ccosupervisor={某某某教授}, % 联合指导老师
+  % 日期自动使用当前时间，若需指定按如下方式修改：
+  % cdate={超新星纪元},
+  %
+  % 博士后专有部分
+  cfirstdiscipline={计算机科学与技术},
+  cseconddiscipline={系统结构},
+  postdoctordate={2009年7月——2011年7月},
+  id={编号}, % 可以留空： id={},
+  udc={UDC}, % 可以留空
+  catalognumber={分类号}, % 可以留空
+  %
+  %=========
+  % 英文信息
+  %=========
+  etitle={ Alignment and Blending in Panoramic Image and Video},
+  % 这块比较复杂，需要分情况讨论：
+  % 1. 学术型硕士
+  %    edegree：必须为Master of Arts或Master of Science（注意大小写）
+  %             “哲学、文学、历史学、法学、教育学、艺术学门类，公共管理学科
+  %              填写Master of Arts，其它填写Master of Science”
+  %    emajor：“获得一级学科授权的学科填写一级学科名称，其它填写二级学科名称”
+  % 2. 专业型硕士
+  %    edegree：“填写专业学位英文名称全称”
+  %    emajor：“工程硕士填写工程领域，其它专业学位不填写此项”
+  % 3. 学术型博士
+  %    edegree：Doctor of Philosophy（注意大小写）
+  %    emajor：“获得一级学科授权的学科填写一级学科名称，其它填写二级学科名称”
+  % 4. 专业型博士
+  %    edegree：“填写专业学位英文名称全称”
+  %    emajor：不填写此项
+  edegree={Master of Engineering},
+  emajor={Computer Technology},
+  eauthor={Wang Minxuan},
+  esupervisor={Professor Zhang Songhai},
+  % 日期自动生成，若需指定按如下方式修改：
+  % edate={December, 2005}
+  %
+  % 关键词用“英文逗号”分割
+  ckeywords={全景视频, 图像对齐, 图像融合,色彩渗透},
+  ekeywords={Panoramic Video, Image Alignment, Image Blending, Color Bleeding}
+}
+
+% 定义中英文摘要和关键字
+\begin{cabstract}
+  随着虚拟现实技术的快速发展，人们全景视频的需要越来越多，但是相比于
+  传统的视频，全景视频资源少，制作成本高，制作难度大等问题日益突出，所以如何简单有效的生成视觉效果
+  良好的全景视频是非常重要的工作。而图像的对齐与融合是图像处理领域一个重要的研究方向，在图像补全，
+  图像编辑等领域有广泛的应用，全景图像与视频的拼接与融合以图像拼接融合为基础，在全景视频生成，虚拟现实
+  等技术应用中起到了关键性的作用。\\
+  \indent 本文研究了视频资源采集，视频图像对齐以及模板生成，全景视频融合等整个全景视频生成过程，
+  同时比较了传统图像融合算法在全景视频融合应用中的优劣，针对图像融合算法存在的问题进行了改进，从而
+  生成效果更好的全景视频。本文主要工作以及贡献包括：\\
+  \indent 1).构建并贡献了优秀的全景视频资源数据集，贡献的全景视频涵盖了不同光照场景，不同物体距离场景
+  ，动态以及静态摄像机场景等。\\
+  \indent 2).设计了全局对齐并局部调整的全景视频对齐算法，首先使用全局对齐策略生成了全景对齐模板，对于模板细节
+  使用局部对齐算法进行了调整，从而有更好的细节效果。\\
+  \indent 3).应用传统的图像对齐算法于全景视频生成，并比较了各种算法的优劣，同时比较了Feather Blending，Multi-Band Blending，
+  Multi-Splines Blending，Modified Possion Blending，Mean Value Coordinate Blending，Convolution Pyramids Blending算法的运行效率以及效果。\\
+  \indent 4).针对传统的算法中存在的色彩渗透问题进行了改进,使用局部边界区域代替传统单像素边界差，并使用双向融合策略，有效得减少了色彩渗透现象的发生，并保持了更好的全景视频的色彩效果。\\
+
+
+
+\end{cabstract}
+
+% 如果习惯关键字跟在摘要文字后面，可以用直接命令来设置，如下：
+% \ckeywords{\全景视频, \图像对齐, 图像融合, 色彩渗透}
+
+\begin{eabstract}
+    With the rapid deveopment of virtual reality technology, people need more and more panoramic video.
+    But compared to traditional video, less panoramic video resources, high production cost, and difficulty
+    in production are becoming prominent. Image alignment and image blending are important research direction in the field of image processing, there are wide range of applications in image completion and image editing, based on image alignment and image
+    blending, panoramic image alignment and blending  play an important role in the production of panoramic video and virtual reality. \\
+    \indent This paper studies collection of panoramic video, image alignment and template generation, image blending and so on,
+    then comparing the advantages and disadvantages of traditional image blending algorithm, an design new algorithm to solve problems
+    in image blending.The main contribution in this paper as follows:\\
+    \indent 1).Construct and provide a dataset of panoramic video, include scenes with different lighting, different object distance,static and movement camera and so on.\\
+    \indent 2).Propose the method of alignment in panoramic video, we use global homography to produce a global alignment template, 
+    and then use local homograph to adjust the local region of panoramic image for better local detail.\\
+    \indent 3).Apply traditional image alignment algorithms to panoramic video generation, evaluate diffrent image blending algorithm
+    include Feater Blending, Multi-Band Blending, Multi-Splines Blending, Modified Poisson Blending,Mean Value Coordinates Blending,
+    Convolution Pyramids Blending.\\
+    \indent 4).Propose a algorithm to solve the color bleeding problem in panoramic image producing,replace one pixel boundary difference with local boundary region, and use bidirection blending to generate panoramic image that can decrease color bleeding , and perserve
+    better color effect.\\
+
+\end{eabstract}
+
+% \ekeywords{\TeX, \LaTeX, CJK, template, thesis}
