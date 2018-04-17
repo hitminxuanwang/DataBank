@@ -1,0 +1,202 @@
+\chapter{全景视频数据采集与图像对齐}
+在关键的全景视频融合之前有大量预处理工作需要展开，本章旨在介绍全景视频融合之前的步骤，全景视频的数据的采集以及全景图像的对齐工作。合理的全景设备的搭建有助于后续算法的展开，而良好的全景对齐模板的计算可以有效地减少图像融合阶段遇到的问题，例如图像对齐工作越精细，在全景融合阶段出现的色彩渗透现象越弱。
+
+\section{全景视频数据采集}
+全景视频的数据采集是整个全景视频生成工作的基础，本文使用的全景设备主要包括：6台GoPro相机，1台同步遥控器，2个三脚架等。相机的摆设为：5台相机水平朝向，相机与相机之间的角度约为72度，另外一台相机朝向天空，负责拍摄全景视频中的天顶部分，同步遥控器负责同时启动6台GoPro设备，保证各个相机的帧同步，另外有车载三脚架用于在相机随着车辆移动时拍摄视频。如图\ref{device}是本文的视频采集设备。之后本文使用此相机阵列去拍摄各个场景，场景内容丰富，包括不同光照下的场景，例如正午，傍晚，夜晚的场景。同时包括不同物体-相机距离的场景，例如小房间，教室，餐厅，会场，马路
+，广场上等。不同相机状态的场景，例如相机静止状态的全景视频，相机随着车辆移动情况下的全景视频。本文构建的全景视频数据集已经公开，便于更多的人进行研究与探索，本文在此数据集的基础上进行了全景对齐与全景融合的相关研究。
+\begin{figure}[h]
+%  \centering
+\begin{tabular}{l l l}
+  %1 & 2 & 3
+  % after \\: \hline or \cline{col1-col2} \cline{col3-col4} ...
+  \includegraphics[width=130pt]{..//images//device//rig.jpg} &
+  \includegraphics[width=130pt]{..//images//device//tripus.jpg} &
+  \includegraphics[width=130pt]{..//images//device//vehicle_mounted.jpg}
+\end{tabular}
+  \caption{全景采集设备}\label{device}
+\end{figure}
+\section{图像对齐}
+采集了足够的全景视频资源之后，本文首先对拍摄到的各路视频进行了预处理，例如相机帧同步，相机畸变矫正，视频投影等预处理操作，并研究了相关的图像对齐算法在全景视频对齐中的应用。
+\subsection{视频预处理}
+对于相机直接拍摄到的视频，还是过于粗糙难以直接应用于全景视频的生成，需要大量的预处理工作。
+\subsubsection{畸变矫正}
+首先本文使用了鱼眼镜头进行了视频拍摄，首先需要对各路视频进行畸变矫正，本文使用了PtGui自带的鱼眼矫正方式，根据相机的参数来进行畸变矫正。
+\subsubsection{帧同步}
+虽然有同步遥控器控制多台相机同时启动和关闭，但是由于工艺原因，拍摄到的各路视频依旧存在帧不同步的问题，帧间的不同步会导致严重的问题，
+首先，由于帧的不同步，导致相邻相机之间同一时间拍摄到的内容不尽相同，尤其是有快速移动的物体经过，或者相机镜头非静止的情况，会造成严重的
+拍摄内容不一致，难以使用对齐算法完成对齐工作，另外，即使相邻镜头之间帧间差异较小，可以完成对齐工作，也会造成特定的几种融合算法例如Mean Value Coordinates和Convolution Pyramids等在融合阶段出现严重的色彩渗透现象。\\
+\indent 本文采取如下措施避免帧不同步的发生，首先，在各路视频拍摄过程中加入一次闪光或者声音，用闪光或者声音完成帧间的同步，另外对视频进行了人工设置，设定各路视频的延迟或者快进时间，尽量保证各路视频之间帧的同步，从而更好的完成全景对齐和全景融合工作。
+\subsubsection{建立映射表}
+从拍摄到的各路视频到可以投影到球面上的全景视频的创建，需要经过畸变矫正，投影透视等一系列操作，通过记录像素点在源视频中的位置和最终的位置
+可以建立从源视频到全景视频的映射表，使用映射表可以方便快捷的直接从拍摄到的源视频映射为全景图像，需要注意的是如果有后续的调整操作，例如使用局部对齐算法对全景对齐模板进行修改，需要对映射表进行相关更新。
+\subsection{全景对齐模板生成}
+全景对齐是全景图像生成的基础性工作，用来完成全景对齐模板的生成，全景对齐模板的生成是映射表建立的重要组成部分之一。
+\subsubsection{全局对齐}     ？》
+在全景视频的对齐中往往使用的是全局对齐算法，全局对齐算法使用Global Homography(全局变换矩阵)，全局变换矩阵可以有效的生成规整的全局对齐模板
+例如Hugin使用此种Global Homography的算法策略。另外PtGui等软件首先将图像投影到球面上，并且计算相关的特征点匹配，根据计算的特征点匹配结果，移动球面上的各路视频完成全景对齐工作，其本质也是使用全局变换矩阵进行对齐操作,故统一当作全局对齐处理。首先详解介绍全局对齐算法中的几个基本概念：\\
+\indent 一.SIFT特征及特征匹配。SIFT特征(Scale-invariant feature transform Feature)是一种广泛应用于图像匹配，图像检索，图像对齐等领域的图像特征，SIFT特征具有旋转不变性，尺度无关性，光照视角无关性等优秀特点，十分适合应用于图像对齐工作。首先SIFT特征需要构建一个尺度空间，使用高斯卷积核构建高斯金字塔对图像进行尺度分解。传统的高斯金字塔中高斯函数为：\\
+\begin{center}
+\begin{equation}\label{gauss}
+     G(x,y,\delta)=\frac{1}{2\pi\delta^2}e^{-(x^2+y^2)/2\delta^2}
+\end{equation}
+\end{center}
+将图像记作$I(x,y)$,对图像的高斯分解可以记作：
+\begin{center}
+\begin{equation}\label{conv}
+     L(x,y,\delta)=G(x,y,\delta)*I(x,y)
+\end{equation}
+\end{center}
+根据$\delta$值可以提取出不同的卷积特征，也就是不同的频率信息，高频信息对应图像的细节部分，低频信息对应图像的轮廓部分，SIFT特征使用了DOG表示(DOG scale space),特征的提取替换为
+ \begin{center}
+\begin{equation}\label{sift}
+\begin{split}
+   D(x,y,\delta)&=G(x,y,k\delta)-G(x,y,\delta))*(I(x,y)) \\
+     &=L(x,y,k\delta)-L(x,y,\delta)
+\end{split}
+  %D(x,y,\delta)=G(x,y,k\delta)-G(x,y,\delta))*(I(x,y))\\
+  %=L(x,y,k\delta)-L(x,y,\delta)
+\end{equation}
+\end{center}
+其中$k$对应不同的细度,对于不同的细度反应图像的不同尺度信息。
+\begin{figure}
+  \centering
+  %\includegraphics[width=400pt]{..//images//sift.png}
+  %\caption{SIFT特征中不同的细度信息}\label{sift}
+\end{figure}
+建立了图像金字塔之后，对图像进行关键点检测，SIFT特征寻找局部范围内的极值点，也就是比周围所有像素的值大或者比周围所有像素点的值小，并且要保证这一条件在图像金字塔临近的两个尺度上都得到了满足，这样的特征点被认为是DoG尺度下的一个特征点。经过了初步筛选之后，算法得到了部分特征点，需要对这些特征点进行进一步处理，使用公式：
+\begin{center}
+  \begin{equation}\label{taylor}
+    D(\hat{x})=D+\frac{1}{2}\frac{\partial D^T}{\partial x}\hat{x})
+  \end{equation}
+\end{center}
+其中符号$D$代表尺度函数的泰勒展开式,对设定保留$|D(\hat{x})|>0.03$的特征点，同时需要消除关键点的边缘响应。之后根据关键点附近的梯度方向给关键点施加方向参数。其中方向公式为：
+\begin{center}
+  \begin{equation}\label{sift-ori}
+    \theta(x,y)=\alpha tan2((L(x,y+1)-L(x,y-1))/(L(x+1,y)-L(x-1,y))
+  \end{equation}
+\end{center}
+根据计算的方向，构建特征直方图，直方图的峰值，反应了特征点的主方向，根据关键点的位置尺度方向等信息，生成关键点的特征描述子(4*4领域内的8个梯度方向共计128维向量)。根据计算好的SIFT特征之间的欧氏距离可以初步确定SIFT匹配特征对，使用RANSAC算法进一步消除错误匹配的特征对，主要原理为：选取一定量的内点，通过内点计算出模型参数，并使用此模型参数检测所有特征点，如果有足够多的点被当作点内即为合理，反复迭代直至产生较为合理的模型。\\
+二.APAP(As Projective As Possible )算法，作为局部对齐算法的典型代表，APAP算法首先也需要对输入的两张图像进行SIFT特征点的提取与匹配，
+记为$X=[x,y]^T$和$X'=[x',y']^T$是图像$I$和$I'$中对应的特征对匹配，所以projective warp的目标是
+\begin{center}
+  \begin{equation}\label{projective}
+    \hat{X}'=H\hat{X}
+  \end{equation}
+\end{center}
+其中$\hat{X}$是$X$的齐次坐标形式，$H \in \mathbb{R}^{3x3}$定义了Homography变换矩阵。故可以将\ref{projective}记作
+\begin{center}
+  \begin{equation}\label{warp_and}
+    x'=\frac{h_1^T[x,y,1]^T}{h_3^T[x,y,1]^T} ~and~ y'=\frac{h_2^T[x,y,1]^T}{h_4^T[x,y,1]^T}
+  \end{equation}
+\end{center}
+其中$h_j^T$是H矩阵的$j-th$行，可以看到公式组\ref{projective}为系统加入了非线性变换，可以更好的完成局部对齐工作。公式\ref{projective}可以改写成$0_{3x1}=\hat{x}\times H\hat{x}$
+\begin{center}
+  \begin{equation}\label{warp_matrix}
+    0_{3x1}=\begin{bmatrix}
+              0_{1x3} & -\hat{x}^T & y'\hat{x}^T \\
+              \hat{x}^T & 0_{1x3} & -x'\hat{x}^T \\
+              -y'\hat{x}^T & x'\hat{x}^T  & 0_{1x3}
+            \end{bmatrix}h ,~h=\begin{bmatrix}
+                               h_1 \\
+                               h_2 \\
+                               h_3
+                             \end{bmatrix}
+  \end{equation}
+  \end{center}
+
+
+
+
+
+在方程\ref{warp_matrix}中只有两行是线性独立的,记$a_i\in{\mathbb{R}^{2x9}}$为第i组特征对${x_i,x_i'}$对应的方程\ref{warp_matrix}的前两行。
+要优化的方程变为:
+    \begin{center}
+      \begin{equation}\label{h}
+        \hat{h}=\underset{h}{argmin}\sum_{i=1}^{N}||a_ih||^2=\underset{h}{argmin}||Ah||^2
+      \end{equation}
+    \end{center}
+并且有$||h||=1$,其中$A\in \mathbb{R}^{2Nx9}$是将所有$a_i$拼接而成的矩阵。方程的解是具有最小奇异值对应的奇异向量。当拟合一个H矩阵的过程中
+为了完成图像的对齐工作，任意的图像I中的像素$x_*$需要映射到图像I'中的$x_*'$上，如公式\ref{map}所示：
+\begin{center}
+  \begin{equation}\label{map}
+  \hat{x}_*'=H\hat{x}_*
+\end{equation}
+\end{center}
+
+当使用局部图像对齐策略的时候，H矩阵会被分级成跟图像网格相关的数个矩阵，故方程\ref{map}改写成
+\begin{center}
+\begin{equation}\label{local_map}
+  \hat{x}_*'=H_*\hat{x}_*
+\end{equation}
+\end{center}
+对$H_*$进行带权拟合，如方程\ref{weight}所示，
+\begin{center}
+  \begin{equation}\label{weight}
+    h_*=\underset{h}{argmin}\sum_{i=1}^{N}||\omega_*^ia_ih||^2
+  \end{equation}
+\end{center}
+并且$||h||=1$,其中权值$\omega_*^i$的计算为:
+\begin{center}
+  \begin{equation}\label{omega}
+    \omega_*^i=max(exp(-||x_*-x_i||^2/\delta^2),\gamma)
+  \end{equation}
+\end{center}
+
+
+%------------------------------------------------
+其中$\delta$为尺度参数,$\gamma$是0-1的数值。根据公式\ref{omega}距离$x_*$越近的点拥有更大的权值，所以$H_*$能够更好的适应$x_*$附近的图像结构。公式\ref{weight}可以表达为矩阵形式：
+\begin{center}
+  \begin{equation}\label{weight_matrix}
+    h_*=\underset{h}{argmin}\sum_{i=1}^{N}||W_*^ia_ih||^2
+  \end{equation}
+\end{center}
+其中
+\begin{center}
+  \begin{equation}\label{weight_matrix}
+    W_*=diag([\omega_*^1,\omega_*^1,...,\omega_*^N,\omega_*^N])
+  \end{equation}
+\end{center}
+其中diag()将输入的向量转换为三角矩阵。这是一个WSVD问题，解是$W_*A$的最小奇异向量。通过求解方程可以得到局部网格变换矩阵，使用局部网格变换
+可以对图像进行局部细节调整。
+
+
+\indent 本文首先对输入的图像进行SIFT特征点提取，根据计算的特征点寻找特征对。建立了特征对之后，计算Global Homography来对图像进行变换操作，变换之后的图像即为完成对齐的图像，对于对齐的图像需要计算相邻两路视频帧之间的拼缝如图\ref{seam}所示。
+\begin{figure}
+  \centering
+  \includegraphics[width=400pt]{..//images//seam.png}
+  \caption{典型的全景拼接图像，区域0为顶部相机拍摄，1-5为水平相机拍摄，粉红色的线为相邻视频帧之间的拼缝}\label{seam}
+\end{figure}
+对于Global Homography的计算，PtGui使用估算相机位姿的策略，计算参数包括yaw,pitch,roll即俯仰角，偏航角，滚轮角。对于相机的位姿估计与计算global homography可以达到类似的效果，都是近似物体-相机距离为球面半径，这样通常能够较为简便的生成全景图像对齐模板。本文使用了PtGui产生全局对齐模板，并根据此模板计算初步的映射表，如图\ref{source}所示，
+\begin{figure}[h]
+%  \centering
+\begin{tabular}{l}
+  \includegraphics[width=400pt]{..//images//left.jpg} \\
+  \includegraphics[width=400pt]{..//images//right.jpg}
+\end{tabular}
+  \caption{全局对齐生成的初步对齐模板，图示为两路相邻图像帧}\label{source}
+\end{figure}
+
+为PtGui初步对齐之后的结果。完成了全局对齐模板之后，本文使用APAP算法对全局对齐模板进行了调整，调整的过程中设置了严格的限制条件，对于PtGui生成的全景对齐模板，在使用APAP算法进行调整的时候限制原始模板的边界不大的发生变化，主要对模板内部区域进行调整，具体策略为，强制加入限制特征点，全景对齐模板中的两两对齐区域的边界设置4对特征对，分别为左上角，左下角，右上角，右下角，保证经过局部调节的模板依旧能够有效的投影到球面上，经过添加约束之后APAP算法能够在完成局部细节调整的基础上，较好的保持原始全景模板的形状，不会产生过度自由的变换使整体图像扭曲。本文对APAP算法的权值计算函数进行了平滑操作，修改之后的权值计算函数为：
+\begin{center}
+  \begin{equation}\label{mod_apap}
+    \omega_*^i=\beta*exp(-||x_*-x_i||^\beta/\delta^2)+\epsilon
+  \end{equation}
+\end{center}
+其中$\beta=0.9,\epsilon=0.1$,对权值计算进行了部分修改，主要使像素点和特征点之间距离的影响对权值的贡献减弱了一部分，另外取消了截断操作的max函数,而是使用更加平滑的加上一个基础扰动值，这样可以减小全景对齐中容易出现的线段断开现象。
+同时为了保证更好的灵活性和准确性，本文设计了一个简单的Web标注工具，用来手工输入特征点，如图\ref{web},使用手工输入的特征点往往能够生成效果更好的全景对齐模板，相关的对比实验结果将在接下来的章节介绍。对于图像对齐模板的局部调节会改变原始的映射表，需要保存原始像素和更新后的坐标关系，同时根据新的坐标和原始坐标的对应关系，更新映射表的内容，新的映射表可以直接从原始的视频内容经过差值等处理直接映射为经过全局变换和局部变换的全景图像像素坐标。
+\begin{center}
+  \begin{figure}[h]
+    \centering
+    \includegraphics[width=400pt]{..//images//web.png}
+    \caption{Web标注工具}\label{web}
+  \end{figure}
+\end{center}
+
+\section{本章总结}
+本章首先介绍了本文对于全景视频数据集的构建与图像对齐的相关工作。\\
+\indent 本文首先介绍了本文中使用到的相关数据的采集和预处理工作，对于拍摄到的初始视频进行了畸变矫正，帧同步，投影等一些列操作。之后本文介绍了全景对齐方面的工作，SIFT特征是剔除了光照影响的具有尺度不变，旋转不变性的特征，十分适合应用于全景图像的对齐工作，在此基础上使用全局对齐算法初步生成了全景对齐模板，并建立了映射表可以有效的把原始视频内容直接映射成全景视频，同时使用APAP算法对全景视频模板进行了局部的细节调整，使全景模板的细节对齐效果更加良好，为全景融合提供更好的基础资源，同时加入了Web的手工特征点输入来保证可以手工介入对齐步骤的计算，用以保证生成要求更高的全景对齐模板。\\
+\indent 实验结果表明，本文的对齐策略相比于传统的
+商业软件有更好的对齐效果，相关的实验结果将在接下来的章节进行介绍。
+
+
+
