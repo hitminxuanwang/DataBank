@@ -3,4 +3,142 @@
 所以全景融合的效率直接反应了全景视频生成的效率。本章介绍传统的图像融合算法如何应用于全景视频的生成，以及现有的两种全景视频融合算法，对比算法的融合效率和效果，同时针对算法中的问题进行了改进。
 
 \section{融合算法详细推导}
+图像融合(Image Blending)，学术界有着详细的研究，本节将详细介绍和推导相关的算法公式。
+\subsection{Feather Blending(FB)}
+Feather Blending(FB)是对重叠区域的简单详解加权融合，如公式\ref{feather}所示:
+\begin{center}
+    \begin{equation}\label{feather}
+        P=\sum_{i=1}^{n}\omega_iP_i
+    \end{equation}
+\end{center}
+其中$\omega_i$是每一路输入视频流中的单像素权值。对于每一个像素，各路视频流的单像素权值和为1，所以对于FB算法只会对重叠区域产生影响，最简单的策略是在视频融合区域的所有地方都是用0.5的权值进行融合。更好的策略是对于不同的视频流，在公共边界处的单像素权值设置为0.5,远离边界靠近另外的视频流的区域的像素权值随着像素到公共边界的距离的增大递减，直到权值变为0，远离边界靠近本视频流区域的像素权值随着像素到公共边界的距离的增大而增加，直到权值变为1。由于每一个像素的计算是相互独立的，所以FB算法能够很好的并行化。
+\subsection{Multi-Band Blending(MBB)}
+Multi-Band Blending(MBB),MBB算法对图像的不同的频域部分使用FB算法进行融合，首先创建图像的拉普拉斯金字塔，对金字塔的每一层进行线性融合，最终的融合结果为所有频段的融合图像的叠加。拉普拉斯金字塔可以使用等效加权函数(equivalent weighting functions)并行生成，拉普拉斯金字塔的每个级别都可以被当作原始的图像的函数，可以预先计算输入图像和其他层级之间的函数映射，这样可以保证在金字塔的每一个层级可以并行完成计算。使用高斯带权图也可以并行地完成多层拉普拉斯金字塔的合并。Multi-Band Blending可以定义为：
+\begin{center}
+    \begin{equation}\label{mbb}
+        P=\sum_{j=1}^{l}EXPAND(Q_j)
+    \end{equation}
+\end{center}
+其中，l为拉普拉斯金字塔的层数，EXPAND()为图像到原始分辨率的上采样，$Q_j$定义为:
+\begin{center}
+    \begin{equation}\label{mbbQ}
+        Q_j=\sum_{i=1}^{n}G_i^jL_i^j
+    \end{equation}
+\end{center}
+其中$G_i^j$是第i个视频流的高斯金字塔的第j层。$L_i^j$是第j个视频流的拉普拉斯金字塔的第j层。
+\subsection{Mean Value Coordinates Blending(MVCB)}
+Mean Value Coordinates Blending(MVCB),MVCB使用泊松融合近似拉普拉斯membrane，根据边界梯度差，创建了一个调和差值函数。不同于传统的泊松融合直接计算像素的最终结果，MVCB通过计算偏移图(offset map),最后将偏移图加到未融合的原始图像上来生成融合结果。给定需要融合的像素点$x$,
+\begin{center}
+    \begin{equation}\label{mvc}
+       P^*(x)=\sum_{i=0}^{m-1}\lambda_i(x)sub(p_i)
+    \end{equation}
+\end{center}
+
+
+其中$p_i$是融合区域中的拼缝边界，$sub()$是对重叠图像相同元素值的求差操作(假如想要融合的图像为$T_a$和$T_b$，并且将$T_a$融合进$T_b$之中，$sub()$的结果为$T_a-T_b$)，$m$是边界拼缝上的像素点的数量，$\lambda_i$是预期边界点的在$x$处的均值坐标。
+对于输出区域中的每个像素，偏移值是从像素均值坐标推导的带权的边界线性组合。由于边界拼缝具有固定的位置，所以对于所有全景视频中的帧来说都可以进行预计算均值坐标和权值，节省大量全景视频生成的消耗。由于偏移图的每一个像素的计算仅仅依赖于边界梯度差，所以MVCB可以有效的进行并行化。
+
+
+\subsection{Convolution Pyramids Blending(CPB)}
+在MVCB中最后的偏移图offset可以写作：
+\begin{center}
+    \begin{equation}\label{off}
+       P^*(x)=\frac{\sum_{k}\omega_k(x)b(x_k)}{\sum_{\omega_k(x)}}
+    \end{equation}
+\end{center}
+其中$x_k$是像素点，$b(x)$是边界上的值，$\omega_k(x)$是对应的均值坐标，故等式\ref{off}可以写为卷积函数和特征函数的比值，
+\begin{center}
+    \begin{equation}\label{cpb}
+       P^*(x)=\frac{\sum_{j=0}^{n}\omega(x_i,x_j)\hat{P}(x_j)}{\sum_{k=0}^{n}\omega(x_i,x_j)\chi_{\hat{P}(x_j)}}
+    \end{equation}
+\end{center}
+其中$\hat{P}$为边界扩展，从重叠区域的边界拼缝扩展到整个待融合区域如公式\ref{ext}所示,$\chi_{\hat{P}(x_j)}$为特征函数，当$\hat{P}$非0的时候特征函数为1,否则特征函数为0.
+\begin{center}
+    \begin{equation}\label{ext}
+      \hat{P}(x_i)=\begin{cases}
+                     b(x_k), & \mbox{if } x_i=x_k \\
+                     0, & \mbox{otherwise}.
+                   \end{cases}
+    \end{equation}
+\end{center}
+由上述公式可知，计算偏移图涉及到大规模卷积核的卷积运算，卷积核的规模与图像规模正相关。但是卷积金字塔策略可以使用卷积框架将大规模卷积运算分解为数个小型卷积核的组合，使用小型卷积核的组合操作可以将计算时间降低到线性时间。
+
+\subsection{Multi-Splines Blending(MSB)}
+使用能量最小化方程，泊松融合可以改写成：
+\begin{center}
+    \begin{equation}\label{msbe}
+    \begin{split}
+       E= & \underset{i,j}{\sum}({P^*}_{i+1,j}^{l_{i+1,j}}-{P^*}_{i,j}^{l_{i,j}}-\hat{g}_{i,j}^x)^2+ \\
+         & ({P^*}_{i,j+1}^{l_{i,j+1}}-{P^*}_{i,j}^{l_{i,j}}-\hat{g}_{i,j}^y)^2
+    \end{split}
+    \end{equation}
+\end{center}
+其中$l_{i,j}$标识像素位置的下标$(i,j)$所来源的视频流，这个标签可以使用mask来获得，梯度$\hat{g}_{i,j}^x$定义为:
+   \begin{center}
+    \begin{equation}\label{int}
+        \hat{g}_{i,j}^x={P'}_{i,j}^{l_{i,j}}-{P'}_{i,j}^{l_{i+1,j}}+{P'}_{i+1,j}^{l_{i,j}}-{P'}_{i,j}^{l_{i,j}}
+    \end{equation}
+\end{center}
+其中${P'}_{i,j}^{l_{i,j}}$为标号为$l_{i,j}$的视频流中，位置为$(i,j)$处的像素亮度值，同时$\hat{g}_{i,j}^y$和$\hat{g}_{i,j}^x$
+类似的形式。能量值$E$可以通过求解线性方程$Az=b$完成最小化，其中$z$为偏移图中未知的待求解的像素值，通过网格近似生成光滑的偏移图，
+偏移图中的像素最后的表达形式为:
+\begin{center}
+    \begin{equation}\label{ms}
+       {P^*}_{i,j}^l=\underset{k,m}{\sum}c_{k,m}^lB(i-kR,j-mR)
+    \end{equation}
+\end{center}
+其中R为样条网格像素空间，本文设置为64个像素，$B(i-kR,j-mR)$为样条基的计算，$c_{k,m}$样条控制顶点，使用样条网格顶点代替原始像素参与
+大规模稀疏线性方程求解，效率上得到了很大提升。
+
+\subsection{Modified Possion Blending(MPB)}
+Modified Poisson Blending 在原始泊松方程的能量函数的基础上添加了色彩保持项:
+\begin{center}
+    \begin{equation}\label{mpb}
+       E'=\underset{i,j}{\sum}\epsilon(I_{i,j}-P_{i,j})^2+(g_{i,j}-\nabla P_{i,j})^2
+    \end{equation}
+\end{center}
+其中$I_{i,j}$是原始的图像在位置$(i,j)$处的亮度，$P_{i,j}$是最后的全景图像在位置$(i,j)$的亮度，$\epsilon$是权值参数，$\nabla P_{i,j}$是最后的全景图对应的梯度,$g_{i,j}$是梯度图$g$中位置为$(i,j)$处的值，其中$g$为梯度图，梯度图是通过计算全部视频流的梯度，并将全部视频流的梯度放置进全景模板之后的结果，如公式\ref{gradient}所示:
+\begin{center}
+    \begin{equation}\label{gradient}
+        g=\sum_{1}^{n}g_i{M'}_i
+    \end{equation}
+\end{center}
+不同于原始的泊松融合算法，MPB算法中$(i,j)$覆盖图像的全部区域，所以全部的视频流中的所有像素都会被改变，同时在频域上求解大规模线性稀疏方程:
+\begin{center}
+    \begin{equation}\label{fsolve}
+        P^T{_{i,j}}=\frac{v^T_{i,j}-\epsilon u^T_{i,j}}{d^T_{i,j}-\epsilon}
+    \end{equation}
+\end{center}
+其中$P^T_{i,j}$是最后的全景图中每个像素的余弦变换(DCT)的结果，$v^T_{i,j}$是图像拉普拉斯金字塔的余弦变换结果，图像的拉普拉斯金字塔是将各个视频流的拉普拉斯变换放进最后的全景图的结果。$u^T_{i,j}$是原始图像的余弦变换的结果，$d^T_{i,j}$为拉普拉斯算子的余弦变换的结果，最后的全景图像为$P^T_{i,j}$逆余弦变换。
+
+\section{融合算法在全景视频生成中的应用}
+\indent 传统的全景融合主要使用Feather Blending(FB) 和Multi-Band Blending(MBB)。本文实现了使用MVCB，CPB，MSB，MPB等算法于全景视频生成，不同于传统的图像融合，全景视频融合计算量巨大，实时性要求高，要求帧间连续性等特性，不同的算法在融合阶段往往会产生截然不同的结果，并且融合结果还会与视频内容，场景直接相关，本文将在下面的章节进行详细的分析。另外一个在全景视频生成中的问题是色彩渗透(bleeding)现象,本节主要介绍色彩渗透现象以及改进策略。
+\subsection{色彩渗透}
+色彩渗透(Bleeding)是基于泊松融合算法都会存在的问题，色彩渗透是由于图像在对齐阶段难以保证完全对齐，总有像素级别的不对齐，但是基于泊松融合的算法的原理是将边界上的差异扩散到整个融合区域，如果边界上的像素梯度差由于不对齐存在差异，会使边界上可能存在数值明显大于周围的峰值，该峰值通过融合算法扩散会明显产生一个围绕该边界峰值点的明亮区域或者暗区域，使最后的融合图像在该峰值点周围产生明显异于其他区域的明暗块，也就是
+Bleeding(色彩渗透)如图\ref{bleeding}所示。
+\begin{center}
+\begin{figure}
+  \begin{tabular}{l l}
+    \includegraphics[height=200pt]{..//images//bleeding1.png} & \includegraphics[height=200pt]{..//images//bleeding2.png} \\
+  \end{tabular}
+  \caption{MVCB生成的全景图中典型的色彩渗透现象，明显的单通道或者多通道色彩失真}\label{bleeding}
+  \end{figure}
+\end{center}
+\subsection{色彩渗透的避免}
+本文对MVCB和CPB进行了改进以避免色彩渗透的发生，传统的梯度域融合算法计算边界梯度差往往使用单像素，由于对齐阶段的像素不对齐以及图像中存在的随机噪声，边界梯度差异往往难以精确计算，从而造成色彩渗透现象的发生。本文的改进算法基于两项研究，首先使用局部区域均值代替单像素计算的边界差异更加稳定，同时能够有效的避免随机噪声，通过此方法可以得到更加光滑的边界差异。大的边界差异往往导致明显的色彩渗透现象，相比于传统的MVCB以及CPB算法，本文使用双向扩散代替原始的单向融合区域，可以进一步减小色彩渗透现象的产生，同时也能够更好的保留原始图像的色彩。
+\subsubsection{局部边界差异(local difference)}
+本算法的核心思想是提高边界差异计算的准确性和稳定性。在MVCB和CPB中边界差异的计算为：
+\begin{center}
+  \begin{equation}\label{bd}
+    b(p_i)=I_t(p_i)-I_s(p_i)
+  \end{equation}
+\end{center}
+其中$I_t(p_i)$和$I_s(p_i)$分别是目标图像和源图像在位置$p_i$处的像素值。
+
+
+
+
+
+
+
 
